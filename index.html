@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reordenacuentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chewy&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rosa:#f7b2b7; --coral:#ee8790; --fresa:#c9535f; --crema:#fff5ec;
+  --menta:#cfe9d6; --mantequilla:#fde9ab; --cielo:#cfe3f3; --tinta:#5b3a3d;
+  --titulo:'Chewy','Comic Sans MS','Chalkboard SE',cursive;
+  --cuento:'Andika','Verdana','Trebuchet MS',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh; background:var(--crema); color:var(--tinta);
+  font-family:var(--titulo); font-size:1.15rem; letter-spacing:.02em;
+}
+/* Fondo tipo dibujo de crayón */
+#fondo{position:fixed; inset:0; width:100%; height:100%; z-index:-1}
+main{max-width:920px; margin:0 auto; padding:20px 16px 60px}
+h1,h2{font-weight:400; margin:0}
+h1{font-size:clamp(2.4rem,7vw,4rem); color:var(--fresa); text-align:center; transform:rotate(-2deg); text-shadow:3px 3px 0 var(--mantequilla)}
+.sub{text-align:center; font-size:1.3rem; margin:6px 0 22px}
+.puntos{display:flex; justify-content:center}
+.chip{display:inline-flex; gap:8px; align-items:center; background:var(--mantequilla); border:4px solid var(--coral); border-radius:30px 18px 28px 20px; padding:6px 18px; font-size:1.3rem}
+.lista{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-top:26px}
+.tarjeta{
+  cursor:pointer; font:inherit; color:var(--tinta); text-align:center; padding:20px 12px;
+  border:4px solid var(--coral); border-radius:28px 14px 30px 16px; background:var(--rosa);
+  transition:transform .15s; box-shadow:5px 6px 0 rgba(201,83,95,.35);
+}
+.tarjeta:nth-child(2){background:var(--cielo); border-color:#8fb7d6; border-radius:16px 30px 14px 28px}
+.tarjeta:nth-child(3){background:var(--mantequilla); border-color:#e5b94f}
+.tarjeta:nth-child(4){background:var(--menta); border-color:#86c195; border-radius:14px 28px 30px 18px}
+.tarjeta:hover{transform:rotate(-2deg) scale(1.04)}
+.tarjeta .emoji{font-size:3.4rem; display:block}
+.tarjeta .nombre{font-size:1.5rem; display:block; margin:6px 0}
+.estrellas{font-size:1.4rem; letter-spacing:3px; min-height:1.8rem}
+button:focus-visible{outline:5px dashed var(--fresa); outline-offset:4px}
+
+.barra{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.btn{
+  font:inherit; font-size:1.2rem; cursor:pointer; color:#fff; background:var(--fresa);
+  border:4px solid #a73f4b; border-radius:24px 14px 24px 16px; padding:8px 20px; box-shadow:3px 4px 0 rgba(0,0,0,.15);
+}
+.btn.suave{background:#fff; color:var(--fresa); border-color:var(--coral)}
+.btn:active{transform:translateY(2px)}
+.btn:disabled{opacity:.5; cursor:default}
+.progreso{height:22px; border:4px solid var(--coral); border-radius:20px; background:#fff; overflow:hidden; margin:6px 0 16px}
+.progreso i{display:block; height:100%; width:0; background:var(--rosa); transition:width .4s}
+
+.libro{
+  background:#fffdf8; border:4px solid var(--coral); border-radius:22px 12px 24px 14px; padding:22px 24px;
+  min-height:190px; font-family:var(--cuento); font-size:clamp(1.3rem,3.4vw,1.65rem); line-height:1.75;
+  box-shadow:6px 7px 0 rgba(201,83,95,.3);
+}
+.libro h2{font-family:var(--titulo); font-size:2rem; color:var(--fresa); margin-bottom:8px}
+.libro .frase{animation:aparece .5s ease-out}
+.libro .espera{color:#b99a9c; border-bottom:4px dotted var(--rosa)}
+@keyframes aparece{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+
+.mensaje{min-height:2rem; text-align:center; margin:14px 0 4px; font-size:1.3rem; color:var(--fresa)}
+.banco{display:grid; gap:12px}
+.frase-carta{
+  font-family:var(--cuento); font-size:clamp(1.15rem,3vw,1.4rem); line-height:1.5; text-align:left; color:var(--tinta);
+  background:var(--mantequilla); border:4px solid #e5b94f; border-radius:18px 10px 20px 12px; padding:12px 16px; cursor:pointer;
+  box-shadow:3px 4px 0 rgba(0,0,0,.12); transition:transform .12s;
+}
+.frase-carta:nth-child(even){background:var(--cielo); border-color:#8fb7d6}
+.frase-carta:nth-child(3n){background:var(--menta); border-color:#86c195}
+.frase-carta:hover{transform:rotate(-.6deg) scale(1.01)}
+.frase-carta.mal{animation:tiembla .4s; background:var(--rosa); border-color:var(--fresa)}
+.frase-carta.pista{outline:5px dashed var(--fresa); outline-offset:3px}
+@keyframes tiembla{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}}
+
+.final{text-align:center; margin-top:20px}
+.final .grande{font-size:3.2rem; letter-spacing:6px; animation:salta 1s ease-out}
+.final p{font-size:1.5rem; margin:8px 0 14px}
+@keyframes salta{0%{transform:scale(.2)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.oculto{display:none!important}
+/* Versión para ordenador */
+body{font-size:1.25rem}
+main{max-width:1280px; padding:36px 56px 70px}
+h1{font-size:5rem}
+.sub{font-size:1.6rem; margin-bottom:28px}
+.lista{grid-template-columns:repeat(4,1fr); gap:30px; margin-top:44px}
+.tarjeta{padding:34px 16px}
+.tarjeta .emoji{font-size:5rem}
+.tarjeta .nombre{font-size:1.8rem; margin:12px 0}
+.tablero{display:grid; grid-template-columns:1.1fr 1fr; gap:36px; align-items:start}
+.libro{position:sticky; top:20px; min-height:440px; padding:30px 34px; font-size:1.75rem}
+.libro h2{font-size:2.4rem}
+.mensaje{margin-top:0; font-size:1.5rem}
+.frase-carta{font-size:1.4rem; padding:16px 20px}
+@media (max-width:900px){
+  main{padding:20px 16px 50px}
+  .lista{grid-template-columns:repeat(2,1fr)}
+  .tablero{grid-template-columns:1fr}
+  .libro{position:static; min-height:190px; font-size:1.4rem}
+  h1{font-size:3rem}
+}
+/* Más cuentos y retoques */
+.puntos{gap:16px; flex-wrap:wrap}
+.lista{grid-template-columns:repeat(5,1fr); gap:24px}
+.tarjeta{padding:26px 10px}
+.tarjeta .emoji{font-size:4.2rem}
+.tarjeta .nombre{font-size:1.5rem; line-height:1.15; min-height:3.4rem; display:flex; align-items:center; justify-content:center}
+.tarjeta .frases{display:block; font-size:1rem; opacity:.75}
+.tarjeta.c0{background:var(--rosa); border-color:var(--coral); border-radius:28px 14px 30px 16px}
+.tarjeta.c1{background:var(--cielo); border-color:#8fb7d6; border-radius:16px 30px 14px 28px}
+.tarjeta.c2{background:var(--mantequilla); border-color:#e5b94f; border-radius:30px 16px 20px 14px}
+.tarjeta.c3{background:var(--menta); border-color:#86c195; border-radius:14px 28px 30px 18px}
+.tarjeta.c4{background:#e6d5f0; border-color:#b899cf; border-radius:24px 20px 14px 30px}
+.tarjeta:nth-child(odd):hover{transform:rotate(2deg) scale(1.05)}
+.progreso{height:26px; border-radius:20px}
+.progreso i{background:repeating-linear-gradient(45deg,var(--rosa) 0 14px,var(--coral) 14px 28px)}
+.mensaje{background:#fff; border:4px dashed var(--coral); border-radius:26px 14px 26px 14px; padding:10px 16px; text-align:left}
+.mensaje:empty{display:none}
+.mensaje::before{content:"🦊  "}
+.libro{background:#fffdf8 radial-gradient(circle at 50% 0,#fff 0,#fff7ee 100%)}
+.libro::before{content:"📖"; position:absolute; right:14px; top:8px; font-size:1.8rem; opacity:.6}
+.libro{position:sticky}
+.pie{text-align:center; margin-top:34px}
+.borrar{font:inherit; font-size:1rem; background:none; border:none; color:#a77c7f; text-decoration:underline; cursor:pointer}
+@media (max-width:1100px){.lista{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.lista{grid-template-columns:repeat(2,1fr)} .libro{position:relative}}
+/* Jugadores */
+.cambiar{font:inherit; font-size:1.3rem; color:var(--tinta); cursor:pointer; background:var(--menta); border-color:#86c195}
+.cambiar:hover{transform:rotate(-1.5deg)}
+.nuevo-card{background:#fff!important; border-style:dashed!important; border-color:var(--coral)!important}
+.panel{max-width:620px; margin:34px auto 0; background:#fffdf8; border:4px solid var(--coral); border-radius:26px 14px 28px 16px; padding:24px 28px; box-shadow:6px 7px 0 rgba(201,83,95,.3)}
+.etiqueta{font-size:1.4rem; margin:0 0 8px}
+#nombre{width:100%; font:inherit; font-size:1.8rem; color:var(--tinta); padding:8px 16px; border:4px solid var(--rosa); border-radius:18px; background:#fff; margin-bottom:18px}
+#nombre:focus{outline:none; border-color:var(--fresa)}
+.avatares{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px}
+.avatar{font-size:2.8rem; line-height:1; width:78px; height:78px; cursor:pointer; background:#fff; border:4px solid var(--rosa); border-radius:20px}
+.avatar.sel{background:var(--mantequilla); border-color:var(--fresa); transform:scale(1.1)}
+.acciones{display:flex; gap:14px; justify-content:center}
+#perfiles .lista{margin-top:36px}
+/* Cuentos largos */
+.libro{max-height:calc(100vh - 40px); overflow-y:auto}
+.mensaje{position:sticky; top:10px; z-index:5; box-shadow:0 4px 0 rgba(201,83,95,.2)}
+.frase-carta{padding:12px 18px; font-size:1.3rem}
+.banco{gap:10px}
+@media (max-width:900px){.libro{max-height:none}}
+/* Voz y 12 cuentos */
+.lista{grid-template-columns:repeat(4,1fr)}
+@media (max-width:1100px){.lista{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.lista{grid-template-columns:repeat(2,1fr)}}
+.frase-carta{display:flex; align-items:stretch; padding:0; cursor:default; overflow:hidden}
+.elegir{flex:1; font:inherit; color:inherit; background:none; border:none; text-align:left; cursor:pointer; padding:12px 10px 12px 18px; line-height:1.5}
+.oir{flex:none; width:60px; font-size:1.7rem; cursor:pointer; background:rgba(255,255,255,.65); border:none; border-left:3px dotted rgba(0,0,0,.2)}
+.oir:hover{background:#fff}
+.elegir:focus-visible,.oir:focus-visible{outline:5px dashed var(--fresa); outline-offset:-5px}
+body.sinvoz .oir, body.sinvoz #voz, body.sinvoz #leer, body.sinvoz #leerTodo{display:none}
+.final .btn{margin:0 6px 6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<svg id="fondo" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <filter id="crayon" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>
+    </filter>
+    <filter id="grano">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="2" result="g"/>
+      <feColorMatrix in="g" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 1.2"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <rect width="800" height="600" fill="#fff1e8"/>
+  <g filter="url(#crayon)" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".75">
+    <!-- sol -->
+    <g stroke="#f6cf5f" stroke-width="14"><path d="M95 70c-30 10-35 55-5 70 30 12 62-12 55-42-6-28-35-35-50-28z"/><path d="M60 40l-18-16M105 28V6M152 48l16-14M172 105l22 4M60 150l-18 14"/></g>
+    <!-- nube -->
+    <path d="M520 90c-30 0-35 35-8 38h95c30-2 30-40-2-40-8-28-52-28-62 2z" stroke="#a9cbe6" stroke-width="12"/>
+    <path d="M300 140c-20 0-22 24-5 26h62c20-2 20-27-1-27-6-18-35-18-42 1z" stroke="#c4def0" stroke-width="10"/>
+    <!-- corazones y estrellas -->
+    <path d="M690 230c-22-28-60 0-30 28l30 26 30-26c28-28-8-56-30-28z" stroke="#ef8790" stroke-width="12"/>
+    <path d="M60 330c-14-18-38 0-18 18l18 16 18-16c18-18-5-36-18-18z" stroke="#f7b2b7" stroke-width="10"/>
+    <path d="M420 250l9 22 24 2-18 16 6 24-21-13-21 13 6-24-18-16 24-2z" stroke="#f6cf5f" stroke-width="9"/>
+    <path d="M740 440l7 17 18 1-14 12 5 18-16-10-16 10 5-18-14-12 18-1z" stroke="#f6cf5f" stroke-width="8"/>
+    <!-- flores -->
+    <g stroke="#ee8790" stroke-width="10"><circle cx="150" cy="470" r="10"/><path d="M150 450v-14M150 490v14M130 470h-14M170 470h14"/></g>
+    <path d="M150 505c2 25-4 45 2 75" stroke="#86c195" stroke-width="9"/>
+    <g stroke="#f7b2b7" stroke-width="10"><circle cx="610" cy="500" r="9"/><path d="M610 482v-12M610 518v12M592 500h-12M628 500h12"/></g>
+    <path d="M610 530c-2 20 3 35 0 50" stroke="#86c195" stroke-width="9"/>
+    <!-- hierba -->
+    <path d="M0 585c30-25 60 10 90-12s60 8 90-10 60 12 90-8 60 6 90-10 60 10 90-8 60 8 90-10 60 8 90-6 60 6 90-4" stroke="#86c195" stroke-width="16"/>
+    <path d="M0 575c40-15 70 8 110-6s70 8 110-6 80 8 120-6 80 6 120-6 80 6 120-4" stroke="#b8dec1" stroke-width="12"/>
+    <!-- garabatos -->
+    <path d="M330 420c40-30 70 20 110-10s60 20 90-5" stroke="#cfe3f3" stroke-width="10"/>
+    <path d="M30 220c20-15 30 15 50 0s30 15 50 0" stroke="#fbc9cc" stroke-width="9"/>
+  </g>
+  <rect width="800" height="600" fill="#fff" filter="url(#grano)" opacity=".5"/>
+</svg>
+
+<main>
+  <section id="perfiles" class="oculto">
+    <h1>¿Quién juega?</h1>
+    <p class="sub">Toca tu cara para seguir con tus estrellas.</p>
+    <div class="lista" id="listaPerfiles"></div>
+    <div class="panel oculto" id="nuevo">
+      <label for="nombre" class="etiqueta">¿Cómo te llamas?</label>
+      <input id="nombre" maxlength="12" autocomplete="off" placeholder="Tu nombre">
+      <p class="etiqueta">Elige tu amigo</p>
+      <div class="avatares" id="avatares"></div>
+      <div class="acciones">
+        <button class="btn" id="crear">¡Listo!</button>
+        <button class="btn suave" id="cancelar">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="inicio" class="oculto">
+    <h1>Reordenacuentos</h1>
+    <p class="sub">Elige un cuento y reordena las frases para leerlo.</p>
+    <div class="puntos"><button class="chip cambiar" id="cambiar" title="Cambiar de jugador"><span id="jugador"></span> · Cambiar</button><span class="chip">⭐ Puntos: <b id="total">0</b></span><span class="chip">📖 Cuentos leídos: <b id="leidos">0</b>/<span id="cuantos"></span></span></div>
+    <div class="lista" id="lista"></div>
+    <p class="pie"><button class="borrar" id="borrar">Borrar este jugador</button></p>
+  </section>
+
+  <section id="juego" class="oculto">
+    <div class="barra">
+      <button class="btn suave" id="volver">← Cuentos</button>
+      <span class="chip"><span id="avJuego"></span> Puntos: <b id="pts">0</b></span>
+      <button class="btn suave" id="leer">▶ Leer lo que llevo</button>
+      <button class="btn suave" id="voz">🔊 Voz: sí</button>
+      <button class="btn suave" id="pista">💡 Pista (−5)</button>
+    </div>
+    <div class="progreso" aria-hidden="true"><i id="prog"></i></div>
+    <div class="tablero">
+      <article class="libro" id="libro"></article>
+      <div class="columna">
+        <p class="mensaje" id="msg" role="status" aria-live="polite"></p>
+        <div class="banco" id="banco"></div>
+      </div>
+    </div>
+    <div class="final oculto" id="final">
+      <div class="grande" id="estrellasFinal"></div>
+      <p id="textoFinal"></p>
+      <button class="btn suave" id="leerTodo">🔊 Escuchar el cuento</button>
+      <button class="btn" id="otro">Leer otro cuento</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const CUENTOS=[
+ {id:"caperucita",titulo:"Caperucita Roja",emoji:"🧺",frases:[
+  "Había una vez una niña llamada Caperucita Roja que vivía cerca del bosque.",
+  "Su abuelita le había regalado una capa roja con capucha, y ella la llevaba siempre.",
+  "Un día, su mamá le pidió que llevara una cesta con comida a su abuelita.",
+  "Su mamá le dijo que no se apartara del camino ni hablara con extraños.",
+  "En el bosque, Caperucita se encontró con un lobo muy astuto.",
+  "El lobo le preguntó adónde iba, y ella le contó que iba a casa de su abuelita.",
+  "El lobo corrió hasta la casa de la abuelita y se puso su camisón.",
+  "Cuando Caperucita llegó, vio que la abuelita tenía unos ojos y unos dientes enormes.",
+  "El lobo saltó de la cama para atraparla, y Caperucita empezó a gritar.",
+  "Un leñador oyó los gritos, entró corriendo y salvó a todos del lobo."
+]},
+ {id:"cerditos",titulo:"Los tres cerditos",emoji:"🐷",frases:[
+  "Había una vez tres cerditos que vivían con su mamá.",
+  "Un día, los cerditos crecieron y salieron de casa para construir cada uno su propio hogar.",
+  "El primero tenía mucha prisa y hizo su casa de paja.",
+  "El segundo hizo la suya de madera, y le salió en un ratito.",
+  "El tercero trabajó mucho y levantó una casita fuerte de ladrillos.",
+  "Un día llegó el lobo feroz y llamó a la puerta de la casa de paja.",
+  "El lobo sopló y sopló, y la casa de paja se vino abajo.",
+  "El primer cerdito huyó a la casa de madera, pero el lobo también la derribó de un soplido.",
+  "Los dos cerditos corrieron asustados a refugiarse en la casa de ladrillos.",
+  "El lobo sopló y sopló, pero la casa no se movió, y se marchó para siempre."
+]},
+ {id:"ricitos",titulo:"Ricitos de Oro",emoji:"🐻",frases:[
+  "Ricitos de Oro paseaba por el bosque cuando encontró una casita.",
+  "Llamó a la puerta, pero nadie contestó, así que entró.",
+  "En la mesa había tres tazones de sopa: uno grande, uno mediano y uno pequeño.",
+  "Ricitos probó el pequeño, estaba muy rico, y se lo comió todo.",
+  "Luego se sentó en tres sillas y rompió la más pequeña.",
+  "Cansada, subió a la habitación y se tumbó en la cama más pequeña.",
+  "Ricitos se quedó dormida enseguida.",
+  "Los tres ositos volvieron a casa y vieron que alguien se había comido su sopa.",
+  "Al subir, encontraron a Ricitos durmiendo en la cama del osito pequeño.",
+  "Ricitos despertó, se asustó y salió corriendo hacia el bosque."
+]},
+ {id:"patito",titulo:"El patito feo",emoji:"🦢",frases:[
+  "En una granja, una mamá pata esperaba a que sus huevos se abrieran.",
+  "Poco a poco nacieron patitos amarillos, y el último fue un patito grande y gris.",
+  "Todos se burlaban de él y lo llamaban el patito feo.",
+  "Triste, el patito se marchó de la granja una noche.",
+  "Pasó el otoño buscando un amigo, pero nadie quería jugar con él.",
+  "Llegó el invierno y el patito pasó mucho frío, solito, junto a un lago.",
+  "Cuando llegó la primavera, el sol calentó el lago.",
+  "El patito vio su reflejo en el agua.",
+  "¡Ya no era un patito feo, sino un precioso cisne blanco!",
+  "Los demás cisnes lo recibieron con alegría y por fin tuvo una familia."
+]},
+ {id:"cenicienta",titulo:"Cenicienta",emoji:"👠",frases:[
+  "Cenicienta vivía con su madrastra y sus dos hermanastras.",
+  "Ellas la hacían trabajar todo el día y no la dejaban descansar.",
+  "Un día, el rey invitó a todas las jóvenes del reino a un baile en el palacio.",
+  "Las hermanastras se fueron al baile, y Cenicienta se quedó en casa llorando.",
+  "Entonces apareció su hada madrina y convirtió una calabaza en una carroza.",
+  "Con un toque de su varita, el hada le dio un vestido precioso y unos zapatitos de cristal.",
+  "El hada le avisó de que el hechizo se acabaría a medianoche.",
+  "Cenicienta bailó toda la noche con el príncipe.",
+  "Al sonar las doce, salió corriendo y perdió un zapatito de cristal en las escaleras.",
+  "El príncipe buscó por todo el reino a la dueña del zapatito y por fin la encontró.",
+  "Cenicienta y el príncipe se casaron y fueron muy felices."
+]},
+ {id:"tortuga",titulo:"La liebre y la tortuga",emoji:"🐢",frases:[
+  "Había una liebre muy presumida que siempre decía que era la más rápida del bosque.",
+  "Un día, se rió de lo despacio que caminaba una tortuga.",
+  "Cansada de las burlas, la tortuga le propuso hacer una carrera.",
+  "Todos los animales del bosque se reunieron para ver quién ganaba.",
+  "Al empezar, la liebre salió disparada y dejó a la tortuga muy atrás.",
+  "Como iba tan por delante, la liebre se tumbó bajo un árbol a echar una siesta.",
+  "La tortuga siguió caminando despacito, sin parar ni un momento.",
+  "Poco a poco, la tortuga pasó junto a la liebre dormida.",
+  "Cuando la liebre despertó, vio que la tortuga ya estaba a punto de llegar a la meta.",
+  "Corrió todo lo que pudo, pero la tortuga cruzó la meta primero y ganó la carrera."
+]},
+ {id:"pinocho",titulo:"Pinocho",emoji:"🤥",frases:[
+  "Geppetto, un viejo carpintero, talló un muñeco de madera y lo llamó Pinocho.",
+  "Esa noche, un hada azul le dio vida al muñeco.",
+  "El hada le prometió que sería un niño de verdad si era bueno y obediente.",
+  "Geppetto mandó a Pinocho a la escuela, pero él se fue con malas compañías.",
+  "Pinocho empezó a decir mentiras.",
+  "Cada vez que mentía, la nariz de Pinocho crecía y crecía.",
+  "Un día, Pinocho supo que una ballena se había tragado a Geppetto.",
+  "Pinocho se lanzó al mar para salvar a su papá.",
+  "Dentro de la barriga de la ballena encontró a Geppetto, y lograron escapar juntos.",
+  "El hada, muy orgullosa de él, lo convirtió en un niño de verdad."
+]},
+ {id:"blancanieves",titulo:"Blancanieves",emoji:"🍎",frases:[
+  "Blancanieves era una princesa muy bella que vivía con su malvada madrastra, la reina.",
+  "Todos los días, la reina le preguntaba a su espejo mágico quién era la más bella del reino.",
+  "Un día, el espejo contestó que la más bella era Blancanieves.",
+  "La reina sintió tanta envidia que ordenó llevar a Blancanieves al bosque.",
+  "Blancanieves logró escapar y encontró una casita donde vivían siete enanitos.",
+  "Los enanitos la acogieron y ella se quedó a vivir con ellos.",
+  "La reina descubrió dónde estaba, se disfrazó de anciana y le ofreció una manzana envenenada.",
+  "Blancanieves mordió la manzana y cayó en un sueño profundo.",
+  "Los enanitos lloraron mucho, pero un príncipe llegó y le dio un beso.",
+  "Blancanieves despertó y los dos vivieron felices."
+]},
+ {id:"jack",titulo:"Jack y las habichuelas",emoji:"🌱",frases:[
+  "Jack vivía con su madre en una casita muy pobre.",
+  "Un día, su madre lo mandó al mercado a vender su vaca.",
+  "En el camino, Jack cambió la vaca por unas habichuelas mágicas.",
+  "Su madre se enfadó muchísimo y tiró las habichuelas por la ventana.",
+  "Por la mañana había crecido una planta gigante que llegaba hasta las nubes.",
+  "Jack subió por la planta y llegó al castillo de un gigante.",
+  "Cuando el gigante se durmió, Jack cogió la gallina de los huevos de oro.",
+  "Jack bajó corriendo por la planta y el gigante lo persiguió.",
+  "Jack cortó la planta con un hacha y el gigante cayó al suelo.",
+  "Gracias a la gallina, a Jack y a su madre nunca les faltó nada."
+]},
+ {id:"durmiente",titulo:"La Bella Durmiente",emoji:"👑",frases:[
+  "Hace mucho tiempo nació una princesa, y el rey hizo una gran fiesta.",
+  "Todas las hadas del reino fueron a bendecir a la niña con regalos.",
+  "Un hada malvada, enfadada por no haber sido invitada, apareció de repente.",
+  "El hada malvada lanzó una maldición: la princesa se pincharía con una rueca y dormiría para siempre.",
+  "Un hada buena suavizó la maldición: la princesa solo dormiría cien años.",
+  "Al cumplir quince años, la princesa se pinchó el dedo con una rueca y se durmió.",
+  "Todo el castillo se quedó dormido y creció un bosque de espinas alrededor.",
+  "Pasaron cien años hasta que un príncipe valiente llegó al castillo.",
+  "El príncipe entró y encontró a la princesa dormida.",
+  "Con un beso despertó a la princesa y todo el reino volvió a la vida."
+]},
+ {id:"hansel",titulo:"Hansel y Gretel",emoji:"🍬",frases:[
+  "Hansel y Gretel eran dos hermanos que vivían con su padre y su madrastra cerca del bosque.",
+  "Un día no había comida en casa, y la madrastra convenció al padre de llevar a los niños al bosque.",
+  "Hansel fue dejando migas de pan por el camino para poder volver a casa.",
+  "Pero los pajaritos se comieron todas las migas, y los hermanos se perdieron.",
+  "Caminaron mucho, con hambre, hasta que encontraron una casita hecha de pan y dulces.",
+  "Los niños empezaron a comer los dulces de la casita.",
+  "Entonces salió una bruja malvada y los encerró en una jaula.",
+  "La bruja quería comerse a Hansel, así que lo engordaba cada día.",
+  "Un día, Gretel empujó a la bruja al horno y salvó a su hermano.",
+  "Los hermanos encontraron el camino de vuelta y se abrazaron con su padre."
+]},
+ {id:"gato",titulo:"El gato con botas",emoji:"🐱",frases:[
+  "Un molinero murió y dejó a su hijo pequeño solo un gato como herencia.",
+  "El joven estaba muy triste, pero el gato le dijo que no se preocupara.",
+  "El gato le pidió un par de botas y un saco.",
+  "Con las botas puestas, el gato cazó un conejo y se lo regaló al rey.",
+  "Le dijo al rey que el regalo era de su amo, el marqués de Carabás.",
+  "Un día, el gato hizo que el joven se bañara en el río justo cuando pasaba el carruaje del rey.",
+  "El gato gritó que unos ladrones les habían robado la ropa.",
+  "El rey le dio al joven ropa elegante y lo invitó a subir al carruaje con su hija, la princesa.",
+  "El gato corrió por delante y engañó a un ogro para que se convirtiera en ratón, y se lo comió.",
+  "El joven se quedó con el castillo del ogro, se casó con la princesa y fue muy feliz."
+]}
+];
+const $=id=>document.getElementById(id);
+let datos={perfiles:[]}, guardado=null; // guardado = jugador actual
+try{
+  const d=JSON.parse(localStorage.getItem("ordenaCuento2"));
+  if(d&&d.perfiles) datos=d;
+  else{ const v=JSON.parse(localStorage.getItem("ordenaCuento"));
+    if(v&&(v.total||Object.keys(v.estrellas||{}).length)) datos.perfiles.push({id:"p"+Date.now(),nombre:"Jugador",avatar:"🦊",total:v.total||0,estrellas:v.estrellas||{}}); }
+}catch(e){}
+const guardar=()=>{try{localStorage.setItem("ordenaCuento2",JSON.stringify(datos));}catch(e){}};
+const esc=t=>t.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const AVATARES=["🦊","🐰","🐻","🐼","🦄","🐸","🐱","🐶"];
+let avatarSel=AVATARES[0];
+
+function perfiles(){
+  parar();
+  $("inicio").classList.add("oculto"); $("juego").classList.add("oculto"); $("perfiles").classList.remove("oculto");
+  $("listaPerfiles").innerHTML=datos.perfiles.map((p,k)=>`<button class="tarjeta c${k%5}" data-id="${p.id}"><span class="emoji">${p.avatar}</span><span class="nombre">${esc(p.nombre)}</span><span class="frases">⭐ ${p.total} puntos</span></button>`).join("")
+    +(datos.perfiles.length<6?`<button class="tarjeta nuevo-card" id="masJ"><span class="emoji">➕</span><span class="nombre">Nuevo jugador</span></button>`:"");
+  if(datos.perfiles.length) $("nuevo").classList.add("oculto"); else abrirNuevo();
+  window.scrollTo(0,0);
+}
+function abrirNuevo(){
+  $("nuevo").classList.remove("oculto");
+  $("cancelar").classList.toggle("oculto",!datos.perfiles.length);
+  $("nombre").value=""; avatarSel=AVATARES[datos.perfiles.length%AVATARES.length]; pintarAvatares();
+  $("nombre").focus();
+}
+function pintarAvatares(){
+  $("avatares").innerHTML=AVATARES.map(a=>`<button class="avatar${a===avatarSel?" sel":""}" data-a="${a}" aria-pressed="${a===avatarSel}">${a}</button>`).join("");
+}
+$("avatares").addEventListener("click",e=>{const b=e.target.closest(".avatar"); if(b){avatarSel=b.dataset.a; pintarAvatares();}});
+$("listaPerfiles").addEventListener("click",e=>{
+  if(e.target.closest("#masJ")) return abrirNuevo();
+  const b=e.target.closest(".tarjeta"); if(!b) return;
+  guardado=datos.perfiles.find(p=>p.id===b.dataset.id); inicio();
+});
+function crear(){
+  const nombre=$("nombre").value.trim()||"Jugador";
+  guardado={id:"p"+Date.now(),nombre,avatar:avatarSel,total:0,estrellas:{}};
+  datos.perfiles.push(guardado); guardar(); inicio();
+}
+$("crear").addEventListener("click",crear);
+$("nombre").addEventListener("keydown",e=>{if(e.key==="Enter") crear();});
+$("cancelar").addEventListener("click",()=>$("nuevo").classList.add("oculto"));
+$("cambiar").addEventListener("click",perfiles);
+
+/* Lectura en voz alta */
+const hayVoz="speechSynthesis" in window;
+if(!hayVoz) document.body.classList.add("sinvoz");
+let vozOn=datos.voz!==false;
+function parar(){ if(hayVoz) speechSynthesis.cancel(); }
+function hablarLista(frases){
+  if(!hayVoz) return;
+  speechSynthesis.cancel();
+  const voces=speechSynthesis.getVoices();
+  const v=voces.find(x=>/^es[-_]ES/i.test(x.lang))||voces.find(x=>/^es/i.test(x.lang));
+  frases.forEach(t=>{
+    const u=new SpeechSynthesisUtterance(t); u.lang="es-ES"; u.rate=.85; u.pitch=1.1;
+    if(v) u.voice=v; speechSynthesis.speak(u);
+  });
+}
+function pintarVoz(){ $("voz").textContent=vozOn?"🔊 Voz: sí":"🔇 Voz: no"; }
+$("voz").addEventListener("click",()=>{ vozOn=!vozOn; datos.voz=vozOn; guardar(); if(!vozOn) parar(); pintarVoz(); });
+$("leer").addEventListener("click",()=>hablarLista([c.titulo,...c.frases.slice(0,colocadas)]));
+$("leerTodo").addEventListener("click",()=>hablarLista([c.titulo,...c.frases]));
+pintarVoz();
+
+let c, colocadas, errores, pistas, pts, orden;
+
+function inicio(){
+  parar();
+  $("juego").classList.add("oculto"); $("perfiles").classList.add("oculto"); $("inicio").classList.remove("oculto");
+  $("jugador").textContent=guardado.avatar+" "+guardado.nombre;
+  $("total").textContent=guardado.total;
+  $("cuantos").textContent=CUENTOS.length;
+  $("leidos").textContent=CUENTOS.filter(x=>guardado.estrellas[x.id]).length;
+  $("lista").innerHTML=CUENTOS.map((x,k)=>{
+    const n=guardado.estrellas[x.id]||0;
+    return `<button class="tarjeta c${k%5}" data-id="${x.id}"><span class="emoji">${x.emoji}</span><span class="nombre">${x.titulo}</span><span class="frases">${x.frases.length} frases</span><span class="estrellas" aria-label="${n} de 3 estrellas">${"⭐".repeat(n)}${"☆".repeat(3-n)}</span></button>`;
+  }).join("");
+  window.scrollTo(0,0);
+}
+$("borrar").addEventListener("click",()=>{
+  if(confirm("¿Borrar a "+guardado.nombre+" y todas sus estrellas?")){
+    datos.perfiles=datos.perfiles.filter(p=>p!==guardado); guardado=null; guardar(); perfiles();
+  }
+});
+$("lista").addEventListener("click",e=>{
+  const b=e.target.closest(".tarjeta"); if(b) empezar(CUENTOS.find(x=>x.id===b.dataset.id));
+});
+
+function mezclar(n){
+  let a;
+  do{ a=[...Array(n).keys()]; for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} }
+  while(a.every((v,i)=>v===i));
+  return a;
+}
+
+function empezar(cuento){
+  c=cuento; colocadas=0; errores=0; pistas=0; pts=0; orden=mezclar(c.frases.length);
+  $("inicio").classList.add("oculto"); $("juego").classList.remove("oculto");
+  $("final").classList.add("oculto"); $("pista").disabled=false;
+  $("avJuego").textContent=guardado.avatar; $("pts").textContent=0; $("prog").style.width="0"; $("msg").textContent=hayVoz?"¿Con qué frase empieza el cuento? Toca 🔊 para escucharlas.":"Toca la frase con la que empieza el cuento.";
+  $("libro").innerHTML=`<h2>${c.emoji} ${c.titulo}</h2><span class="espera" id="espera">¿Cómo empieza?…</span>`;
+  $("banco").innerHTML=orden.map(i=>`<div class="frase-carta" data-i="${i}"><button class="elegir">${c.frases[i]}</button><button class="oir" aria-label="Escuchar esta frase" title="Escuchar">🔊</button></div>`).join("");
+  window.scrollTo(0,0);
+}
+
+$("banco").addEventListener("click",e=>{
+  const b=e.target.closest(".frase-carta"); if(!b) return;
+  const i=+b.dataset.i;
+  if(e.target.closest(".oir")){ hablarLista([c.frases[i]]); return; }
+  if(i===colocadas){
+    pts+=10; colocadas++;
+    $("pts").textContent=pts;
+    const s=document.createElement("span"); s.className="frase"; s.textContent=c.frases[i]+" ";
+    $("libro").insertBefore(s,$("espera"));
+    b.remove();
+    if(vozOn) hablarLista([c.frases[i]]);
+    $("prog").style.width=(colocadas/c.frases.length*100)+"%";
+    document.querySelectorAll(".pista").forEach(x=>x.classList.remove("pista"));
+    if(colocadas===c.frases.length) terminar();
+    else{ $("espera").textContent="¿Y después?…"; const ok=["¡Muy bien!","¡Genial!","¡Eso es!","¡Perfecto!","¡Qué bien lees!"]; $("msg").textContent=ok[colocadas%ok.length]+" +10 ⭐"; }
+  }else{
+    errores++; b.classList.add("mal"); setTimeout(()=>b.classList.remove("mal"),450);
+    $("msg").textContent="¡Uy! Esa frase va en otro momento. Lee otra vez.";
+  }
+});
+
+$("pista").addEventListener("click",()=>{
+  const b=document.querySelector(`.frase-carta[data-i="${colocadas}"]`); if(!b) return;
+  b.classList.add("pista"); pistas++; pts=Math.max(0,pts-5); $("pts").textContent=pts;
+  $("msg").textContent="Mira la frase con el borde de rayitas 👀";
+});
+
+function terminar(){
+  $("espera").remove(); $("pista").disabled=true; $("msg").textContent="";
+  const n=(errores===0&&pistas===0)?3:(errores+pistas<=2?2:1);
+  guardado.total+=pts; guardado.estrellas[c.id]=Math.max(n,guardado.estrellas[c.id]||0); guardar();
+  $("estrellasFinal").textContent="⭐".repeat(n)+"☆".repeat(3-n);
+  $("textoFinal").textContent=`¡Cuento completado! Ganaste ${pts} puntos.`;
+  $("final").classList.remove("oculto");
+  $("final").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+$("volver").addEventListener("click",inicio);
+$("otro").addEventListener("click",inicio);
+perfiles();
+</script>
+</body>
+</html>
